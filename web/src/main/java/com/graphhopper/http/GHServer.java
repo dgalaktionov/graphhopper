@@ -17,12 +17,10 @@
  */
 package com.graphhopper.http;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.servlet.GuiceFilter;
-import com.graphhopper.util.CmdArgs;
+import java.util.EnumSet;
+
+import javax.servlet.DispatcherType;
+
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
@@ -38,140 +36,161 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.DispatcherType;
-import java.util.EnumSet;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.servlet.GuiceFilter;
+import com.google.inject.servlet.GuiceServletContextListener;
+import com.graphhopper.util.CmdArgs;
 
 /**
  * Simple server similar to integration tests setup.
  */
-public class GHServer {
-    private final CmdArgs args;
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    private Server server;
-    private Injector injector;
+public class GHServer extends GuiceServletContextListener {
+	private final CmdArgs args;
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private Server server;
+	private Injector injector;
 
-    public GHServer(CmdArgs args) {
-        this.args = args;
-    }
+	public GHServer() {
+		this.args = new CmdArgs();
+	}
 
-    public static void main(String[] args) throws Exception {
-        new GHServer(CmdArgs.read(args)).start();
-    }
+	public GHServer(CmdArgs args) {
+		this.args = args;
+	}
 
-    public void start() throws Exception {
-        Injector injector = Guice.createInjector(createModule());
-        start(injector);
-    }
+	public static void main(String[] args) throws Exception {
+		new GHServer(CmdArgs.read(args)).start();
+	}
 
-    public void start(Injector injector) throws Exception {
-        if (this.injector != null)
-            throw new IllegalArgumentException("Server already started");
+	public void start() throws Exception {
+		Injector injector = Guice.createInjector(createModule());
+		start(injector);
+	}
 
-        this.injector = injector;
-        ResourceHandler resHandler = new ResourceHandler();
-        resHandler.setDirectoriesListed(false);
-        resHandler.setWelcomeFiles(new String[]{
-                "index.html"
-        });
-        resHandler.setRedirectWelcome(false);
+	public void start(Injector injector) throws Exception {
+		if (this.injector != null)
+			throw new IllegalArgumentException("Server already started");
 
-        ContextHandler contextHandler = new ContextHandler();
-        contextHandler.setContextPath("/");
-        contextHandler.setBaseResource(Resource.newResource(args.get("jetty.resourcebase", "./web/src/main/webapp")));
-        contextHandler.setHandler(resHandler);
+		this.injector = injector;
+		ResourceHandler resHandler = new ResourceHandler();
+		resHandler.setDirectoriesListed(false);
+		resHandler.setWelcomeFiles(new String[]{
+				"index.html"
+		});
+		resHandler.setRedirectWelcome(false);
 
-        server = new Server();
-        // getSessionHandler and getSecurityHandler should always return null
-        ServletContextHandler servHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
-        servHandler.setErrorHandler(new GHErrorHandler());
-        servHandler.setContextPath("/");
+		ContextHandler contextHandler = new ContextHandler();
+		contextHandler.setContextPath("/");
+		contextHandler.setBaseResource(Resource.newResource(args.get("jetty.resourcebase", "./web/src/main/webapp")));
+		contextHandler.setHandler(resHandler);
 
-        // Putting this here (and not in the guice servlet module) because it should take precedence
-        // over more specific routes. And guice, strangely, is order-dependent (even though, except in the servlet
-        // extension, modules are _not_ supposed to be ordered).
-        servHandler.addServlet(new ServletHolder(injector.getInstance(InvalidRequestServlet.class)), "/*");
+		server = new Server();
+		// getSessionHandler and getSecurityHandler should always return null
+		ServletContextHandler servHandler = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
+		servHandler.setErrorHandler(new GHErrorHandler());
+		servHandler.setContextPath("/");
 
-        servHandler.addFilter(new FilterHolder(new GuiceFilter()), "/*", EnumSet.allOf(DispatcherType.class));
+		// Putting this here (and not in the guice servlet module) because it should take precedence
+		// over more specific routes. And guice, strangely, is order-dependent (even though, except in the servlet
+		// extension, modules are _not_ supposed to be ordered).
+		servHandler.addServlet(new ServletHolder(injector.getInstance(InvalidRequestServlet.class)), "/*");
 
-        ServerConnector connector0 = new ServerConnector(server);
-        int httpPort = args.getInt("jetty.port", 8989);
-        String host = args.get("jetty.host", "");
-        connector0.setPort(httpPort);
+		servHandler.addFilter(new FilterHolder(new GuiceFilter()), "/*", EnumSet.allOf(DispatcherType.class));
 
-        int requestHeaderSize = args.getInt("jetty.request_header_size", -1);
-        if (requestHeaderSize > 0)
-            connector0.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
+		ServerConnector connector0 = new ServerConnector(server);
+		int httpPort = args.getInt("jetty.port", 8989);
+		String host = args.get("jetty.host", "");
+		connector0.setPort(httpPort);
 
-        if (!host.isEmpty())
-            connector0.setHost(host);
+		int requestHeaderSize = args.getInt("jetty.request_header_size", -1);
+		if (requestHeaderSize > 0)
+			connector0.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
 
-        server.addConnector(connector0);
+		if (!host.isEmpty())
+			connector0.setHost(host);
 
-        HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[]{
-                contextHandler, servHandler
-        });
+		server.addConnector(connector0);
 
-        GzipHandler gzipHandler = new GzipHandler();
-        gzipHandler.setIncludedMethods("GET", "POST");
-        // Note: gzip only affects the response body like our previous 'GHGZIPHook' behaviour: http://stackoverflow.com/a/31565805/194609
-        // If no mimeTypes are defined the content-type is "not 'application/gzip'", See also https://github.com/graphhopper/directions-api/issues/28 for pitfalls
-        // gzipHandler.setIncludedMimeTypes();
-        gzipHandler.setHandler(handlers);
+		HandlerList handlers = new HandlerList();
+		handlers.setHandlers(new Handler[]{
+				contextHandler, servHandler
+		});
 
-        GraphHopperService graphHopper = injector.getInstance(GraphHopperService.class);
-        graphHopper.start();
-        createCallOnDestroyModule("AutoCloseable for GraphHopper", graphHopper);
+		GzipHandler gzipHandler = new GzipHandler();
+		gzipHandler.setIncludedMethods("GET", "POST");
+		// Note: gzip only affects the response body like our previous 'GHGZIPHook' behaviour: http://stackoverflow.com/a/31565805/194609
+		// If no mimeTypes are defined the content-type is "not 'application/gzip'", See also https://github.com/graphhopper/directions-api/issues/28 for pitfalls
+		// gzipHandler.setIncludedMimeTypes();
+		gzipHandler.setHandler(handlers);
 
-        server.setHandler(gzipHandler);
-        server.setStopAtShutdown(true);
-        server.start();
-        logger.info("Started server at HTTP " + host + ":" + httpPort);
-    }
+		GraphHopperService graphHopper = injector.getInstance(GraphHopperService.class);
+		graphHopper.start();
+		createCallOnDestroyModule("AutoCloseable for GraphHopper", graphHopper);
 
-    protected Module createModule() {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                binder().requireExplicitBindings();
-                if (args.has("gtfs.file")) {
-                    // switch to different API implementation when using Pt
-                    install(new PtModule(args));
-                } else {
-                    install(new GraphHopperModule(args));
-                }
-                install(new GraphHopperServletModule(args));
-            }
-        };
-    }
+		server.setHandler(gzipHandler);
+		server.setStopAtShutdown(true);
+		server.start();
+		logger.info("Started server at HTTP " + host + ":" + httpPort);
+	}
 
-    /**
-     * Close resources on exit
-     */
-    public final void createCallOnDestroyModule(String name, final AutoCloseable closeable) {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                if (closeable != null)
-                    closeable.close();
-            } catch (Exception ex) {
-                if (logger != null)
-                    logger.error("Cannot close " + name + " (" + closeable + ")", ex);
-            }
-        }, name));
-    }
+	protected Module createModule() {
+		return new AbstractModule() {
+			@Override
+			protected void configure() {
+				binder().requireExplicitBindings();
+				if (args.has("gtfs.file")) {
+					// switch to different API implementation when using Pt
+					install(new PtModule(args));
+				} else {
+					install(new GraphHopperModule(args));
+				}
+				install(new GraphHopperServletModule(args));
+			}
+		};
+	}
 
-    public void stop() {
-        if (server == null)
-            return;
+	/**
+	 * Close resources on exit
+	 */
+	public final void createCallOnDestroyModule(String name, final AutoCloseable closeable) {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			try {
+				if (closeable != null)
+					closeable.close();
+			} catch (Exception ex) {
+				if (logger != null)
+					logger.error("Cannot close " + name + " (" + closeable + ")", ex);
+			}
+		}, name));
+	}
 
-        try {
-            server.stop();
-        } catch (Exception ex) {
-            logger.error("Cannot stop jetty", ex);
-        }
-    }
+	public void stop() {
+		if (server == null)
+			return;
 
-    Injector getInjector() {
-        return injector;
-    }
+		try {
+			server.stop();
+		} catch (Exception ex) {
+			logger.error("Cannot stop jetty", ex);
+		}
+	}
+
+	@Override
+	protected Injector getInjector() {
+		if (injector == null) {
+			logger.warn("Bootstrapping injector");
+			Injector injector = Guice.createInjector(createModule());
+
+			try {
+				start(injector);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return injector;
+	}
 }

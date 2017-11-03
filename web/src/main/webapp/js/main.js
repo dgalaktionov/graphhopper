@@ -42169,10 +42169,14 @@ var GHRequest = require('./graphhopper/GHRequest.js');
 var host = ghenv.routing.host;
 if (!host) {
     if (location.port === '') {
-        host = location.protocol + '//' + location.hostname;
+        host = location.protocol + '//' + location.hostname + location.pathname;
     } else {
-        host = location.protocol + '//' + location.hostname + ":" + location.port;
+        host = location.protocol + '//' + location.hostname + ":" + location.port + location.pathname;
     }
+}
+
+if (host.endsWith("/")) {
+	host = host.substr(0, host.length-1);
 }
 
 var AutoComplete = require('./autocomplete.js');
