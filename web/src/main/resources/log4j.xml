@@ -9,10 +9,21 @@
     <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
         <param name="BufferSize" value="500"/>
         <appender-ref ref="stdout"/>
-    </appender>   
+    </appender>
+    <appender name="logfile" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${catalina.home}/logs/graphhopper.log"/>
+        <param name="MaxFileSize" value="5MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="BufferSize" value="500"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%d{dd/MM/yyyy HH:mm:ss}] [%p - %c{1}]  %m%n"/>
+        </layout>
+    </appender>
     <logger name="com.graphhopper" additivity="false">
         <level value="info" />
         <appender-ref ref="ASYNC" />
+        <appender-ref ref="logfile" />
     </logger>
     <!-- order important otherwise we'll get a warning -->
     <root>
