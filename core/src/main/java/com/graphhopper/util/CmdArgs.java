@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -112,7 +113,9 @@ public class CmdArgs extends PMap {
 	 * @return a new CmdArgs object if necessary.
 	 */
 	public static CmdArgs readFromConfigAndMerge(CmdArgs args, String configKey, String configSysAttr) {
-		String configVal = args.get(configKey, "../conf/graphhopper.config");
+		ClassLoader classLoader = CmdArgs.class.getClassLoader();
+		URL resource = classLoader.getResource("graphhopper.config");
+		String configVal = args.get(configKey, resource.getPath());
 		if (!Helper.isEmpty(configVal)) {
 			try {
 				CmdArgs tmp = CmdArgs.readFromConfig(configVal, configSysAttr);
