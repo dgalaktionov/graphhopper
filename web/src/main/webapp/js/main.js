@@ -1183,7 +1183,7 @@
           svg.remove();
         }
       }
-      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX, 
+      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX,
       point.y = e.clientY;
       point = point.matrixTransform(container.getScreenCTM().inverse());
       return [ point.x, point.y ];
@@ -1558,7 +1558,7 @@
     }
     function mousewheeled() {
       var dispatch = event.of(this, arguments);
-      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this), 
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else d3_selection_interrupt.call(this),
       translate0 = location(center0 = center || d3.mouse(this)), zoomstarted(dispatch);
       mousewheelTimer = setTimeout(function() {
         mousewheelTimer = null;
@@ -1927,7 +1927,7 @@
   d3.xhr = d3_xhrType(d3_identity);
   function d3_xhrType(response) {
     return function(url, mimeType, callback) {
-      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType, 
+      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType,
       mimeType = null;
       return d3_xhr(url, mimeType, response, callback);
     };
@@ -2768,7 +2768,7 @@
     return n ? (date.y = d3_time_expandYear(+n[0]), i + n[0].length) : -1;
   }
   function d3_time_parseZone(date, string, i) {
-    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string, 
+    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string,
     i + 5) : -1;
   }
   function d3_time_expandYear(d) {
@@ -2961,7 +2961,7 @@
     var λ00, φ00, λ0, cosφ0, sinφ0;
     d3_geo_area.point = function(λ, φ) {
       d3_geo_area.point = nextPoint;
-      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4), 
+      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4),
       sinφ0 = Math.sin(φ);
     };
     function nextPoint(λ, φ) {
@@ -4790,7 +4790,7 @@
       return _ ? center([ -_[1], _[0] ]) : (_ = center(), [ _[1], -_[0] ]);
     };
     projection.rotate = function(_) {
-      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(), 
+      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(),
       [ _[0], _[1], _[2] - 90 ]);
     };
     return rotate([ 0, 0, 90 ]);
@@ -5644,7 +5644,7 @@
     };
     quadtree.extent = function(_) {
       if (!arguments.length) return x1 == null ? null : [ [ x1, y1 ], [ x2, y2 ] ];
-      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0], 
+      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0],
       y2 = +_[1][1];
       return quadtree;
     };
@@ -7369,7 +7369,7 @@
         return d3_layout_treemapPad(node, x);
       }
       var type;
-      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ], 
+      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ],
       padConstant) : padConstant;
       return treemap;
     };
@@ -7772,7 +7772,7 @@
     };
     scale.rangePoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2, 
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2,
       0) : (stop - start) / (domain.length - 1 + padding);
       range = steps(start + step * padding / 2, step);
       rangeBand = 0;
@@ -7784,7 +7784,7 @@
     };
     scale.rangeRoundPoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2), 
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2),
       0) : (stop - start) / (domain.length - 1 + padding) | 0;
       range = steps(start + Math.round(step * padding / 2 + (stop - start - (domain.length - 1 + padding) * step) / 2), step);
       rangeBand = 0;
@@ -8212,7 +8212,7 @@
     return points.length < 4 ? d3_svg_lineLinear(points) : points[1] + d3_svg_lineHermite(points.slice(1, -1), d3_svg_lineCardinalTangents(points, tension));
   }
   function d3_svg_lineCardinalClosed(points, tension) {
-    return points.length < 3 ? d3_svg_lineLinearClosed(points) : points[0] + d3_svg_lineHermite((points.push(points[0]), 
+    return points.length < 3 ? d3_svg_lineLinearClosed(points) : points[0] + d3_svg_lineHermite((points.push(points[0]),
     points), d3_svg_lineCardinalTangents([ points[points.length - 2] ].concat(points, [ points[1] ]), tension));
   }
   function d3_svg_lineCardinal(points, tension) {
@@ -8985,7 +8985,7 @@
         var g = d3.select(this);
         var scale0 = this.__chart__ || scale, scale1 = this.__chart__ = scale.copy();
         var ticks = tickValues == null ? scale1.ticks ? scale1.ticks.apply(scale1, tickArguments_) : scale1.domain() : tickValues, tickFormat = tickFormat_ == null ? scale1.tickFormat ? scale1.tickFormat.apply(scale1, tickArguments_) : d3_identity : tickFormat_, tick = g.selectAll(".tick").data(ticks, scale1), tickEnter = tick.enter().insert("g", ".domain").attr("class", "tick").style("opacity", ε), tickExit = d3.transition(tick.exit()).style("opacity", ε).remove(), tickUpdate = d3.transition(tick.order()).style("opacity", 1), tickSpacing = Math.max(innerTickSize, 0) + tickPadding, tickTransform;
-        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"), 
+        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"),
         d3.transition(path));
         tickEnter.append("line");
         tickEnter.append("text");
@@ -21593,14 +21593,14 @@ L.Map.mergeOptions({
 
 L.Map.ContextMenu = L.Handler.extend({
     _touchstart: L.Browser.msPointer ? 'MSPointerDown' : L.Browser.pointer ? 'pointerdown' : 'touchstart',
-    
+
     statics: {
         BASE_CLS: 'leaflet-contextmenu'
     },
-    
+
     initialize: function (map) {
         L.Handler.prototype.initialize.call(this, map);
-        
+
         this._items = [];
         this._visible = false;
 
@@ -22164,12 +22164,12 @@ return L.Map.ContextMenu;
                 separate: false,
                 zoomControl: null,
                 spinjs: false,
-                spin: { 
-                    lines: 7, 
-                    length: 3, 
-                    width: 3, 
-                    radius: 5, 
-                    rotate: 13, 
+                spin: {
+                    lines: 7,
+                    length: 3,
+                    width: 3,
+                    radius: 5,
+                    rotate: 13,
                     top: "83%"
                 }
             },
@@ -22178,7 +22178,7 @@ return L.Map.ContextMenu;
                 L.setOptions(this, options);
                 this._dataLoaders = {};
 
-                // Try to set the zoom control this control is attached to from the 
+                // Try to set the zoom control this control is attached to from the
                 // options
                 if (this.options.zoomControl !== null) {
                     this.zoomControl = this.options.zoomControl;
@@ -22271,7 +22271,7 @@ return L.Map.ContextMenu;
                 this.updateIndicator();
 
                 // If removing this loader means we're in no danger of loading,
-                // clear the timeout. This prevents old delays from instantly 
+                // clear the timeout. This prevents old delays from instantly
                 // triggering the indicator.
                 if (this.options.delayIndicator && this.delayIndicatorTimeout && !this.isLoading()) {
                     clearTimeout(this.delayIndicatorTimeout);
@@ -22418,7 +22418,7 @@ return L.Map.ContextMenu;
             },
 
             _addLayerListeners: function(map) {
-                // Add listeners for begin and end of load to any layers already on the 
+                // Add listeners for begin and end of load to any layers already on the
                 // map
                 map.eachLayer(function(layer) {
                     if (!layer.on) return;
@@ -40241,8 +40241,8 @@ module.exports = AutoComplete;
 
 },{"./graphhopper/GHInput.js":12,"./graphhopper/GHRoute.js":14,"./map.js":23,"./tools/format.js":27}],9:[function(require,module,exports){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-// We know that you love 'free', we love it too :)! And so the entire GraphHopper routing engine is not 
-// only free but even Open Source! The GraphHopper Directions API is also free for development. 
+// We know that you love 'free', we love it too :)! And so the entire GraphHopper routing engine is not
+// only free but even Open Source! The GraphHopper Directions API is also free for development.
 // Grab an API key and have fun with installing anything: https://graphhopper.com/#directions-api
 // Misuse of API keys that you don't own is prohibited and you'll be blocked.
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40328,7 +40328,6 @@ var esriAerial = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/servic
 });
 
 var availableTileLayers = {
-    "Omniscale": omniscale,
     "OpenStreetMap": osm,
     "Esri Aerial": esriAerial,
     "TF Transport": thunderTransport,
@@ -40342,8 +40341,8 @@ var availableTileLayers = {
     "OpenStreetMap.de": osmde
 };
 
-module.exports.activeLayerName = "Omniscale";
-module.exports.defaultLayer = omniscale;
+module.exports.activeLayerName = "OpenStreetMap";
+module.exports.defaultLayer = osm;
 
 module.exports.getAvailableTileLayers = function () {
     return availableTileLayers;
@@ -41441,7 +41440,7 @@ module.exports.create = function (mapLayer, path, urlForHistory, request) {
 //            });
 //
 //            // Deselect active element when mouse leaves suggestions container:
-//            container.on('mouseleave.autocomplete', suggestionSelector, function () {                
+//            container.on('mouseleave.autocomplete', suggestionSelector, function () {
 //                that.selectedIndex = -1;
 //                container.children('.' + selected).removeClass(selected);
 //            });
@@ -41951,7 +41950,7 @@ module.exports.create = function (mapLayer, path, urlForHistory, request) {
 
             if(that.selectedIndex === index)
                 return null;
-            
+
             container.children('.' + selected).removeClass(selected);
 
             that.selectedIndex = index;
@@ -42800,12 +42799,12 @@ function routeLatLng(request, doQuery) {
             buttons.append('|');
             buttons.append(miButton);
 
-            routeInfo.append(buttons);            
+            routeInfo.append(buttons);
 
             if (request.hasElevation()) {
                 routeInfo.append(translate.createEleInfoString(path.ascend, path.descend, request.useMiles));
             }
-            
+
             routeInfo.append($("<div style='clear:both'/>"));
             oneTab.append(routeInfo);
 
