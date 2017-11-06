@@ -52,6 +52,7 @@ public class GHServer extends GuiceServletContextListener {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private Server server;
 	private Injector injector;
+	private boolean bootstrapped = false;
 
 	public GHServer() {
 		this.args = new CmdArgs();
@@ -100,20 +101,6 @@ public class GHServer extends GuiceServletContextListener {
 
 		servHandler.addFilter(new FilterHolder(new GuiceFilter()), "/*", EnumSet.allOf(DispatcherType.class));
 
-		ServerConnector connector0 = new ServerConnector(server);
-		int httpPort = args.getInt("jetty.port", 8989);
-		String host = args.get("jetty.host", "");
-		connector0.setPort(httpPort);
-
-		int requestHeaderSize = args.getInt("jetty.request_header_size", -1);
-		if (requestHeaderSize > 0)
-			connector0.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
-
-		if (!host.isEmpty())
-			connector0.setHost(host);
-
-		server.addConnector(connector0);
-
 		HandlerList handlers = new HandlerList();
 		handlers.setHandlers(new Handler[]{
 				contextHandler, servHandler
@@ -130,10 +117,25 @@ public class GHServer extends GuiceServletContextListener {
 		graphHopper.start();
 		createCallOnDestroyModule("AutoCloseable for GraphHopper", graphHopper);
 
-		server.setHandler(gzipHandler);
-		server.setStopAtShutdown(true);
-		server.start();
-		logger.info("Started server at HTTP " + host + ":" + httpPort);
+		if (!bootstrapped) {
+			ServerConnector connector0 = new ServerConnector(server);
+			int httpPort = args.getInt("jetty.port", 8989);
+			String host = args.get("jetty.host", "");
+			connector0.setPort(httpPort);
+
+			int requestHeaderSize = args.getInt("jetty.request_header_size", -1);
+			if (requestHeaderSize > 0)
+				connector0.getConnectionFactory(HttpConnectionFactory.class).getHttpConfiguration().setRequestHeaderSize(requestHeaderSize);
+
+			if (!host.isEmpty())
+				connector0.setHost(host);
+
+			server.addConnector(connector0);
+			server.setHandler(gzipHandler);
+			server.setStopAtShutdown(true);
+			server.start();
+			logger.info("Started server at HTTP " + host + ":" + httpPort);
+		}
 	}
 
 	protected Module createModule() {
@@ -182,6 +184,7 @@ public class GHServer extends GuiceServletContextListener {
 	protected Injector getInjector() {
 		if (injector == null) {
 			logger.warn("Bootstrapping injector");
+			bootstrapped = true;
 			Injector injector = Guice.createInjector(createModule());
 
 			try {
