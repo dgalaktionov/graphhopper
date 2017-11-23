@@ -35,7 +35,6 @@ import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.Parameters.Routing;
 import com.graphhopper.util.PathMerger;
 import com.graphhopper.util.PointList;
-import com.graphhopper.util.StopWatch;
 import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
@@ -61,18 +60,12 @@ public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
 		int pointCounts = ghRequest.getPoints().size();
 		pathList = new ArrayList<>(pointCounts - 1);
 		QueryResult fromQResult = queryResults.get(0);
-		StopWatch sw;
 		RoutingAlgorithm algo = algoFactory.createAlgo(queryGraph, algoOpts);
 
 		for (int placeIndex = 1; placeIndex < pointCounts; placeIndex++) {
 			QueryResult toQResult = queryResults.get(placeIndex);
 
-			sw = new StopWatch().start();
-			String debug = ", algoInit:" + sw.stop().getSeconds() + "s";
-
-			sw = new StopWatch().start();
 			List<Path> tmpPathList = algo.calcPaths(fromQResult.getClosestNode(), toQResult.getClosestNode());
-			debug += ", " + algo.getName() + "-routing:" + sw.stop().getSeconds() + "s";
 			if (tmpPathList.isEmpty())
 				throw new IllegalStateException("At least one path has to be returned for " + fromQResult + " -> " + toQResult);
 
@@ -82,11 +75,9 @@ public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
 					throw new RuntimeException("Time was negative " + path.getTime() + " for index " + idx + ". Please report as bug and include:" + ghRequest);
 
 				pathList.add(path);
-				debug += ", " + path.getDebugInfo();
 				idx++;
 			}
 
-			altResponse.addDebugInfo(debug);
 
 			// reset all direction enforcements in queryGraph to avoid influencing next path
 			queryGraph.clearUnfavoredStatus();
@@ -94,7 +85,7 @@ public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
 			if (algo.getVisitedNodes() >= algoOpts.getMaxVisitedNodes())
 				throw new IllegalArgumentException("No path found due to maximum nodes exceeded " + algoOpts.getMaxVisitedNodes());
 
-			visitedNodesSum += algo.getVisitedNodes();
+			visitedNodesSum = algo.getVisitedNodes();
 		}
 
 		ghResponse.getHints().put("visited_nodes.sum", visitedNodesSum);

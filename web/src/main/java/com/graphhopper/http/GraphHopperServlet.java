@@ -17,16 +17,21 @@
  */
 package com.graphhopper.http;
 
-import com.graphhopper.GHRequest;
-import com.graphhopper.GHResponse;
-import com.graphhopper.GraphHopperAPI;
-import com.graphhopper.PathWrapper;
-import com.graphhopper.routing.util.EncodingManager;
-import com.graphhopper.routing.util.FlagEncoder;
-import com.graphhopper.util.StopWatch;
-import com.graphhopper.util.shapes.GHPoint;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import static com.graphhopper.util.Parameters.DETAILS.PATH_DETAILS;
+import static com.graphhopper.util.Parameters.Routing.CALC_POINTS;
+import static com.graphhopper.util.Parameters.Routing.INSTRUCTIONS;
+import static com.graphhopper.util.Parameters.Routing.POINT_HINT;
+import static com.graphhopper.util.Parameters.Routing.WAY_POINT_MAX_DISTANCE;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -39,13 +44,18 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
 
-import static com.graphhopper.util.Parameters.DETAILS.PATH_DETAILS;
-import static com.graphhopper.util.Parameters.Routing.*;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import com.graphhopper.GHRequest;
+import com.graphhopper.GHResponse;
+import com.graphhopper.GraphHopperAPI;
+import com.graphhopper.PathWrapper;
+import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.routing.util.FlagEncoder;
+import com.graphhopper.util.StopWatch;
+import com.graphhopper.util.shapes.GHPoint;
 
 /**
  * Servlet to use GraphHopper in a remote client application like mobile or browser. Note: If type
@@ -66,6 +76,11 @@ public class GraphHopperServlet extends GHBaseServlet {
     @Inject
     @Named("hasElevation")
     private boolean hasElevation;
+
+	@Override
+	public void doPost(HttpServletRequest httpReq, HttpServletResponse httpRes) throws ServletException, IOException {
+		doGet(httpReq, httpRes);
+	}
 
     @Override
     public void doGet(HttpServletRequest httpReq, HttpServletResponse httpRes) throws ServletException, IOException {
@@ -151,7 +166,7 @@ public class GraphHopperServlet extends GHBaseServlet {
 
         float took = sw.stop().getSeconds();
         String infoStr = httpReq.getRemoteAddr() + " " + httpReq.getLocale() + " " + httpReq.getHeader("User-Agent");
-        String logStr = httpReq.getQueryString() + " " + infoStr + " " + requestPoints + ", took:"
+		String logStr = httpReq.getQueryString() + " " + infoStr + " " + (requestPoints.size() > 10 ? "" : requestPoints) + ", took:"
                 + took + ", " + algoStr + ", " + weighting + ", " + vehicleStr;
         httpRes.setHeader("X-GH-Took", "" + Math.round(took * 1000));
 
