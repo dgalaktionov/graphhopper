@@ -51,7 +51,17 @@ public class RealDijkstraOneToMany extends Dijkstra {
 		currEdge = nodesMap.get(to);
 
 		if (currEdge == null) {
-			return super.calcPath(from, to);
+			currEdge = fromHeap.poll();
+
+			if (currEdge == null) {
+				currEdge = createSPTEntry(from, 0);
+			}
+
+			super.runAlgo();
+
+			if (currEdge != null) {
+				fromHeap.add(currEdge);
+			}
 		}
 
 		return extractPath();
@@ -63,8 +73,8 @@ public class RealDijkstraOneToMany extends Dijkstra {
 	}
 
 	@Override
-	protected boolean isMaxVisitedNodesExceeded() {
+	protected boolean finished() {
 		nodesMap.put(currEdge.adjNode, currEdge);
-		return super.isMaxVisitedNodesExceeded();
+		return super.finished();
 	}
 }
