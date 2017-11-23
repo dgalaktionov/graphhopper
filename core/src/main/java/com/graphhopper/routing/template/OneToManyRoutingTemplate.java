@@ -17,8 +17,7 @@
  */
 package com.graphhopper.routing.template;
 
-import static com.graphhopper.util.Parameters.Routing.PASS_THROUGH;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +27,7 @@ import com.graphhopper.PathWrapper;
 import com.graphhopper.routing.AlgorithmOptions;
 import com.graphhopper.routing.Path;
 import com.graphhopper.routing.QueryGraph;
+import com.graphhopper.routing.RoutingAlgorithm;
 import com.graphhopper.routing.RoutingAlgorithmFactory;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.storage.index.LocationIndex;
@@ -35,6 +35,7 @@ import com.graphhopper.storage.index.QueryResult;
 import com.graphhopper.util.Parameters.Routing;
 import com.graphhopper.util.PathMerger;
 import com.graphhopper.util.PointList;
+import com.graphhopper.util.StopWatch;
 import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
@@ -43,26 +44,63 @@ import com.graphhopper.util.shapes.GHPoint;
  *
  * @author Peter Karich
  */
-public class AlternativeRoutingTemplate extends ViaRoutingTemplate {
-	public AlternativeRoutingTemplate(GHRequest ghRequest, GHResponse ghRsp, LocationIndex locationIndex) {
+public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
+	public OneToManyRoutingTemplate(GHRequest ghRequest, GHResponse ghRsp, LocationIndex locationIndex) {
 		super(ghRequest, ghRsp, locationIndex);
 	}
 
 	@Override
 	public List<QueryResult> lookup(List<GHPoint> points, FlagEncoder encoder) {
-		if (points.size() > 2)
-			throw new IllegalArgumentException("Currently alternative routes work only with start and end point. You tried to use: " + points.size() + " points");
-
 		return super.lookup(points, encoder);
 	}
 
 	@Override
 	public List<Path> calcPaths(QueryGraph queryGraph, RoutingAlgorithmFactory algoFactory, AlgorithmOptions algoOpts) {
-		boolean withViaTurnPenalty = ghRequest.getHints().getBool(Routing.PASS_THROUGH, false);
-		if (withViaTurnPenalty)
-			throw new IllegalArgumentException("Alternative paths and " + PASS_THROUGH + " at the same time is currently not supported");
+		long visitedNodesSum = 0L;
+		boolean viaTurnPenalty = ghRequest.getHints().getBool(Routing.PASS_THROUGH, false);
+		int pointCounts = ghRequest.getPoints().size();
+		pathList = new ArrayList<>(pointCounts - 1);
+		QueryResult fromQResult = queryResults.get(0);
+		StopWatch sw;
+		RoutingAlgorithm algo = algoFactory.createAlgo(queryGraph, algoOpts);
 
-		return super.calcPaths(queryGraph, algoFactory, algoOpts);
+		for (int placeIndex = 1; placeIndex < pointCounts; placeIndex++) {
+			QueryResult toQResult = queryResults.get(placeIndex);
+
+			sw = new StopWatch().start();
+			String debug = ", algoInit:" + sw.stop().getSeconds() + "s";
+
+			sw = new StopWatch().start();
+			List<Path> tmpPathList = algo.calcPaths(fromQResult.getClosestNode(), toQResult.getClosestNode());
+			debug += ", " + algo.getName() + "-routing:" + sw.stop().getSeconds() + "s";
+			if (tmpPathList.isEmpty())
+				throw new IllegalStateException("At least one path has to be returned for " + fromQResult + " -> " + toQResult);
+
+			int idx = 0;
+			for (Path path : tmpPathList) {
+				if (path.getTime() < 0)
+					throw new RuntimeException("Time was negative " + path.getTime() + " for index " + idx + ". Please report as bug and include:" + ghRequest);
+
+				pathList.add(path);
+				debug += ", " + path.getDebugInfo();
+				idx++;
+			}
+
+			altResponse.addDebugInfo(debug);
+
+			// reset all direction enforcements in queryGraph to avoid influencing next path
+			queryGraph.clearUnfavoredStatus();
+
+			if (algo.getVisitedNodes() >= algoOpts.getMaxVisitedNodes())
+				throw new IllegalArgumentException("No path found due to maximum nodes exceeded " + algoOpts.getMaxVisitedNodes());
+
+			visitedNodesSum += algo.getVisitedNodes();
+		}
+
+		ghResponse.getHints().put("visited_nodes.sum", visitedNodesSum);
+		ghResponse.getHints().put("visited_nodes.average", (float) visitedNodesSum / (pointCounts - 1));
+
+		return pathList;
 	}
 
 	@Override
