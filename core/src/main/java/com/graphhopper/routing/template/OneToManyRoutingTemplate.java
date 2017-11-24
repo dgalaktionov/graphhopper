@@ -19,7 +19,9 @@ package com.graphhopper.routing.template;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
@@ -29,12 +31,12 @@ import com.graphhopper.routing.Path;
 import com.graphhopper.routing.QueryGraph;
 import com.graphhopper.routing.RoutingAlgorithm;
 import com.graphhopper.routing.RoutingAlgorithmFactory;
+import com.graphhopper.routing.util.DefaultEdgeFilter;
+import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.FlagEncoder;
 import com.graphhopper.storage.index.LocationIndex;
 import com.graphhopper.storage.index.QueryResult;
-import com.graphhopper.util.Parameters.Routing;
 import com.graphhopper.util.PathMerger;
-import com.graphhopper.util.PointList;
 import com.graphhopper.util.Translation;
 import com.graphhopper.util.shapes.GHPoint;
 
@@ -43,20 +45,46 @@ import com.graphhopper.util.shapes.GHPoint;
  *
  * @author Peter Karich
  */
-public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
+public class OneToManyRoutingTemplate extends AbstractRoutingTemplate implements RoutingTemplate {
+	protected final GHRequest	ghRequest;
+	protected final GHResponse	ghResponse;
+	protected final PathWrapper	altResponse	= new PathWrapper();
+	private final LocationIndex	locationIndex;
+	// result from route
+	protected List<Path> pathList;
+	protected static Map<GHPoint, QueryResult>	cache	= new HashMap<>();
+
 	public OneToManyRoutingTemplate(GHRequest ghRequest, GHResponse ghRsp, LocationIndex locationIndex) {
-		super(ghRequest, ghRsp, locationIndex);
+		this.locationIndex = locationIndex;
+		this.ghRequest = ghRequest;
+		this.ghResponse = ghRsp;
 	}
 
 	@Override
 	public List<QueryResult> lookup(List<GHPoint> points, FlagEncoder encoder) {
-		return super.lookup(points, encoder);
+		if (points.size() < 2)
+			throw new IllegalArgumentException("At least 2 points have to be specified, but was:" + points.size());
+
+		EdgeFilter edgeFilter = new DefaultEdgeFilter(encoder);
+		queryResults = new ArrayList<>(points.size());
+		for (int placeIndex = 0; placeIndex < points.size(); placeIndex++) {
+			GHPoint point = points.get(placeIndex);
+			QueryResult res = cache.get(point);
+
+			if (res == null) {
+				res = locationIndex.findClosest(point.lat, point.lon, edgeFilter);
+				cache.put(point, res);
+			}
+
+			queryResults.add(res);
+		}
+
+		return queryResults;
 	}
 
 	@Override
 	public List<Path> calcPaths(QueryGraph queryGraph, RoutingAlgorithmFactory algoFactory, AlgorithmOptions algoOpts) {
 		long visitedNodesSum = 0L;
-		boolean viaTurnPenalty = ghRequest.getHints().getBool(Routing.PASS_THROUGH, false);
 		int pointCounts = ghRequest.getPoints().size();
 		pathList = new ArrayList<>(pointCounts - 1);
 		QueryResult fromQResult = queryResults.get(0);
@@ -64,6 +92,9 @@ public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
 
 		for (int placeIndex = 1; placeIndex < pointCounts; placeIndex++) {
 			QueryResult toQResult = queryResults.get(placeIndex);
+
+			if (!toQResult.isValid())
+				continue;
 
 			List<Path> tmpPathList = algo.calcPaths(fromQResult.getClosestNode(), toQResult.getClosestNode());
 			if (tmpPathList.isEmpty())
@@ -100,16 +131,18 @@ public class OneToManyRoutingTemplate extends ViaRoutingTemplate {
 			throw new RuntimeException("Empty paths for alternative route calculation not expected");
 
 		// if alternative route calculation was done then create the responses from single paths        
-		PointList wpList = getWaypoints();
-		altResponse.setWaypoints(wpList);
 		ghResponse.add(altResponse);
 		pathMerger.doWork(altResponse, Collections.singletonList(pathList.get(0)), tr);
 		for (int index = 1; index < pathList.size(); index++) {
 			PathWrapper tmpAltRsp = new PathWrapper();
-			tmpAltRsp.setWaypoints(wpList);
 			ghResponse.add(tmpAltRsp);
 			pathMerger.doWork(tmpAltRsp, Collections.singletonList(pathList.get(index)), tr);
 		}
 		return true;
+	}
+
+	@Override
+	public int getMaxRetries() {
+		return 1;
 	}
 }

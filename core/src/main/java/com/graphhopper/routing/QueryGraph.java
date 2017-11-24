@@ -17,6 +17,16 @@
  */
 package com.graphhopper.routing;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.IntObjectMap;
 import com.carrotsearch.hppc.predicates.IntObjectPredicate;
@@ -31,12 +41,16 @@ import com.graphhopper.storage.GraphExtension;
 import com.graphhopper.storage.NodeAccess;
 import com.graphhopper.storage.TurnCostExtension;
 import com.graphhopper.storage.index.QueryResult;
-import com.graphhopper.util.*;
+import com.graphhopper.util.AngleCalc;
+import com.graphhopper.util.EdgeExplorer;
+import com.graphhopper.util.EdgeIterator;
+import com.graphhopper.util.EdgeIteratorState;
+import com.graphhopper.util.GHUtility;
+import com.graphhopper.util.Helper;
+import com.graphhopper.util.PointList;
 import com.graphhopper.util.shapes.BBox;
 import com.graphhopper.util.shapes.GHPoint;
 import com.graphhopper.util.shapes.GHPoint3D;
-
-import java.util.*;
 
 /**
  * A class which is used to query the underlying graph with real GPS points. It does so by
@@ -222,7 +236,7 @@ public class QueryGraph implements Graph {
         // calculate snapped point and swap direction of closest edge if necessary
         for (QueryResult res : resList) {
             // Do not create virtual node for a query result if it is directly on a tower node or not found
-            if (res.getSnappedPosition() == QueryResult.Position.TOWER)
+			if (res.getSnappedPosition() == QueryResult.Position.TOWER || !res.isValid())
                 continue;
 
             EdgeIteratorState closestEdge = res.getClosestEdge();

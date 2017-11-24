@@ -17,10 +17,10 @@
  */
 package com.graphhopper;
 
-import com.graphhopper.util.PMap;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.graphhopper.util.PMap;
 
 /**
  * Wrapper containing path and error output of GraphHopper.
@@ -77,12 +77,12 @@ public class GHResponse {
 
     public String getDebugInfo() {
         String str = debugInfo;
-        for (PathWrapper ar : pathWrappers) {
-            if (!str.isEmpty())
-                str += "; ";
-
-            str += ar.getDebugInfo();
-        }
+		// for (PathWrapper ar : pathWrappers) {
+		// if (!str.isEmpty())
+		// str += "; ";
+		//
+		// str += ar.getDebugInfo();
+		// }
         return str;
     }
 

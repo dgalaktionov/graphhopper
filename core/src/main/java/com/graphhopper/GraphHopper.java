@@ -1080,6 +1080,7 @@ public class GraphHopper implements GraphHopperAPI {
 				Weighting weighting;
 				QueryGraph queryGraph;
 
+				sw = new StopWatch().start();
 				if (chFactoryDecorator.isEnabled() && !disableCH) {
 					boolean forceCHHeading = hints.getBool(CH.FORCE_HEADING, false);
 					if (!forceCHHeading && request.hasFavoredHeading(0))
@@ -1105,6 +1106,7 @@ public class GraphHopper implements GraphHopperAPI {
 					weighting = createWeighting(hints, encoder, queryGraph);
 					ghRsp.addDebugInfo("tmode:" + tMode.toString());
 				}
+				ghRsp.addDebugInfo("graphLookup:" + sw.stop().getSeconds() + "s");
 
 				int maxVisitedNodesForRequest = hints.getInt(Routing.MAX_VISITED_NODES, maxVisitedNodes);
 				if (maxVisitedNodesForRequest > maxVisitedNodes)
