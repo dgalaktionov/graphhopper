@@ -71,6 +71,11 @@ public class OneToManyRoutingTemplate extends AbstractRoutingTemplate implements
 			GHPoint point = points.get(placeIndex);
 			QueryResult res = cache.get(point);
 
+			// clear the cache before it gets too big
+			if (cache.size() > 100000) {
+				cache.clear();
+			}
+
 			if (res == null) {
 				res = locationIndex.findClosest(point.lat, point.lon, edgeFilter);
 				cache.put(point, res);
@@ -93,20 +98,32 @@ public class OneToManyRoutingTemplate extends AbstractRoutingTemplate implements
 		for (int placeIndex = 1; placeIndex < pointCounts; placeIndex++) {
 			QueryResult toQResult = queryResults.get(placeIndex);
 
-			if (!toQResult.isValid())
-				continue;
+			if (toQResult.isValid()) {
+				try {
+					List<Path> tmpPathList = algo.calcPaths(fromQResult.getClosestNode(), toQResult.getClosestNode());
+					if (tmpPathList.isEmpty())
+						throw new IllegalStateException("At least one path has to be returned for " + fromQResult + " -> " + toQResult);
 
-			List<Path> tmpPathList = algo.calcPaths(fromQResult.getClosestNode(), toQResult.getClosestNode());
-			if (tmpPathList.isEmpty())
-				throw new IllegalStateException("At least one path has to be returned for " + fromQResult + " -> " + toQResult);
+					int idx = 0;
+					for (Path path : tmpPathList) {
+						if (path.getTime() < 0)
+							throw new RuntimeException(
+									"Time was negative " + path.getTime() + " for index " + idx + ". Please report as bug and include:" + ghRequest);
 
-			int idx = 0;
-			for (Path path : tmpPathList) {
-				if (path.getTime() < 0)
-					throw new RuntimeException("Time was negative " + path.getTime() + " for index " + idx + ". Please report as bug and include:" + ghRequest);
-
+						pathList.add(path);
+						idx++;
+					}
+				} catch (Exception e) {
+					Path path = new Path(queryGraph, algoOpts.getWeighting());
+					path.setDistance(10000000);
+					path.setFound(true);
+					pathList.add(path);
+				}
+			} else {
+				Path path = new Path(queryGraph, algoOpts.getWeighting());
+				path.setDistance(10000000);
+				path.setFound(true);
 				pathList.add(path);
-				idx++;
 			}
 
 

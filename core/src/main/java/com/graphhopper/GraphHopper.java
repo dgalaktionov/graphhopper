@@ -1100,7 +1100,7 @@ public class GraphHopper implements GraphHopperAPI {
 					queryGraph = new QueryGraph(ghStorage.getGraph(CHGraph.class, weighting));
 					queryGraph.lookup(qResults);
 				} else {
-					checkNonChMaxWaypointDistance(points);
+					// checkNonChMaxWaypointDistance(points);
 					queryGraph = new QueryGraph(ghStorage);
 					queryGraph.lookup(qResults);
 					weighting = createWeighting(hints, encoder, queryGraph);
