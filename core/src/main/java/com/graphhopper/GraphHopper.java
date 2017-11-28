@@ -1053,7 +1053,7 @@ public class GraphHopper implements GraphHopperAPI {
 			List<GHPoint> points = request.getPoints();
 			// TODO Maybe we should think about a isRequestValid method that checks all that stuff that we could do to fail fast
 			// For example see #734
-			checkIfPointsAreInBounds(points);
+			// checkIfPointsAreInBounds(points);
 
 			RoutingTemplate routingTemplate;
 			if (ROUND_TRIP.equalsIgnoreCase(algoStr))
