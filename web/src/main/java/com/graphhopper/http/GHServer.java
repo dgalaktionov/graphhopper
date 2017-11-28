@@ -133,6 +133,7 @@ public class GHServer extends GuiceServletContextListener {
 			server.addConnector(connector0);
 			server.setHandler(gzipHandler);
 			server.setStopAtShutdown(true);
+			server.setAttribute("org.eclipse.jetty.server.Request.maxFormContentSize", -1);
 			server.start();
 			logger.info("Started server at HTTP " + host + ":" + httpPort);
 		}
