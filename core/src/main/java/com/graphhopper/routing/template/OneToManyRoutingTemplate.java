@@ -110,6 +110,7 @@ public class OneToManyRoutingTemplate extends AbstractRoutingTemplate implements
 							throw new RuntimeException(
 									"Time was negative " + path.getTime() + " for index " + idx + ". Please report as bug and include:" + ghRequest);
 
+						path.setFound(true);
 						pathList.add(path);
 						idx++;
 					}
