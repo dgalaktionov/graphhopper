@@ -17,12 +17,27 @@
  */
 package com.graphhopper.http;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.inject.Singleton;
+
 import com.bedatadriven.jackson.datatype.jts.JtsModule;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
@@ -31,13 +46,6 @@ import com.google.inject.Provides;
 import com.google.inject.servlet.ServletModule;
 import com.graphhopper.util.CmdArgs;
 import com.graphhopper.util.details.PathDetail;
-
-import javax.inject.Singleton;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author Peter Karich
@@ -70,6 +78,9 @@ public class GraphHopperServletModule extends ServletModule {
 
         filter("*").through(IPFilter.class);
         bind(IPFilter.class).toInstance(new IPFilter(args.get("jetty.whiteips", ""), args.get("jetty.blackips", "")));
+
+		filter("*").through(AuthFilter.class);
+		bind(AuthFilter.class).toInstance(new AuthFilter(args.get("giro.token", "pleasechangemeyoulazybastard")));
 
         serve("/i18n*").with(I18NServlet.class);
         bind(I18NServlet.class).in(Singleton.class);
