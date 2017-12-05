@@ -55,7 +55,7 @@ public class GraphHopperServletModule extends ServletModule {
     protected Map<String, String> params = new HashMap<String, String>();
 
     public GraphHopperServletModule(CmdArgs args) {
-        this.args = args;
+		this.args = CmdArgs.readFromConfigAndMerge(args, "config", "graphhopper.config");
         params.put("mimeTypes", "text/html,"
                 + "text/plain,"
                 + "text/xml,"
