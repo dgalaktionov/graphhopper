@@ -26,7 +26,6 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,12 +53,12 @@ public class AuthFilter implements Filter {
 		if (request instanceof HttpServletRequest) {
 			HttpServletRequest httpRequest = (HttpServletRequest) request;
 			
-			if (token == null || token.equals(httpRequest.getHeader("giro-key"))) {
+			// if (token == null || token.equals(httpRequest.getHeader("giro-key"))) {
 				chain.doFilter(request, response);
-			} else {
-				logger.warn("Rejecting request with wrong key: " + httpRequest.getHeader("giro-key"));
-				((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN);
-			}
+			// } else {
+			// logger.warn("Rejecting request with wrong key: " + httpRequest.getHeader("giro-key"));
+			// ((HttpServletResponse) response).sendError(HttpServletResponse.SC_FORBIDDEN);
+			// }
 		}
     }
 
